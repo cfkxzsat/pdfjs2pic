@@ -4,7 +4,7 @@ const path = require('path');
 
 class PDF2png {
   async init(scale) {
-    this.scale = scale;
+    this.scale = scale ?? 8;
     this.browser = await puppeteer.launch({
       headless: false
     });

@@ -23,8 +23,8 @@
         const sp = (new URL(document.location)).searchParams;
         const pdfEndpoint = sp.get('pdfEndpoint');
         const page = Number(sp.get('page'));
-        const scale = Number(sp.get('scale')) ?? 8;
-
+        const scale = Number(sp.get('scale'));
+        // console.log(pdfEndpoint, page, scale)
         var url = `http://127.0.0.1:8080/${pdfEndpoint}`;
         // Loaded via <script> tag, create shortcut to access PDF.js exports.
 
