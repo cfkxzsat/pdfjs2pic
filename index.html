@@ -1,68 +1,88 @@
-
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
     <script src="https://mozilla.github.io/pdf.js/build/pdf.js"></script>
-</head>
-<body>
+  </head>
+  <body>
+    <div id="canvas-wrapper"></div>
 
-<h1>PDF.js 'Hello, world!' example</h1>
-
-<canvas id="the-canvas"></canvas>
     <script>
-        var pdfjsLib = window['pdfjs-dist/build/pdf'];
-        // The workerSrc property shall be specified.
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://mozilla.github.io/pdf.js/build/pdf.worker.js';
+      var pdfjsLib = window["pdfjs-dist/build/pdf"];
+      // The workerSrc property shall be specified.
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://mozilla.github.io/pdf.js/build/pdf.worker.js";
 
-        // If absolute URL from the remote server is provided, configure the CORS
-        // header on that server.
-        const sp = (new URL(document.location)).searchParams;
-        const pdfEndpoint = sp.get('pdfEndpoint');
-        const page = Number(sp.get('page'));
-        const scale = Number(sp.get('scale'));
-        // console.log(pdfEndpoint, page, scale)
-        var url = `http://127.0.0.1:8080/${pdfEndpoint}`;
-        // Loaded via <script> tag, create shortcut to access PDF.js exports.
+      // If absolute URL from the remote server is provided, configure the CORS
+      // header on that server.
+      const sp = new URL(document.location).searchParams;
+      const pdfEndpoint = sp.get("pdfEndpoint");
+      const page = Number(sp.get("page"));
+      const scale = Number(sp.get("scale"));
+      // console.log(pdfEndpoint, page, scale)
+      var url = `http://127.0.0.1:8080/${pdfEndpoint}`;
+      // Loaded via <script> tag, create shortcut to access PDF.js exports.
 
-        // Asynchronous download of PDF
-        var loadingTask = pdfjsLib.getDocument(url);
-        loadingTask.promise.then(function(pdf) {
-        console.log('PDF loaded');
-        
-        var pageNumber = page;
-        pdf.getPage(pageNumber).then(function(page) {
-            console.log('Page loaded');
-            
-            var viewport = page.getViewport({scale: scale});
+      const canvasWrapper = document.getElementById('canvas-wrapper');
 
-            // Prepare canvas using PDF page dimensions
-            var canvas = document.getElementById('the-canvas');
-            var context = canvas.getContext('2d');
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
+      // Asynchronous download of PDF
+      var loadingTask = pdfjsLib.getDocument(url);
+      loadingTask.promise.then(
+        function (pdf) {
+          console.log("PDF loaded");
 
-            // Render PDF page into canvas context
-            var renderContext = {
-            canvasContext: context,
-            viewport: viewport
-            };
-            var renderTask = page.render(renderContext);
-            renderTask.promise.then(function () {
-            console.log('Page rendered');
-                const span = document.createElement('span');
-                span.id = 'endIdentifier';
-                document.body.appendChild(span);
-            });
-        });
-        }, function (reason) {
-        // PDF loading error
-        console.error(reason);
-        });
+          let curPage = 1;
+
+          function renderPage() {
+            pdf.getPage(curPage).then(
+              function (page) {
+                console.log("Page loaded");
+
+                var viewport = page.getViewport({ scale: scale });
+
+                // Prepare canvas using PDF page dimensions
+                const canvas = document.createElement("canvas");
+
+                var context = canvas.getContext("2d");
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                canvasWrapper.appendChild(canvas);
+                // Render PDF page into canvas context
+                var renderContext = {
+                  canvasContext: context,
+                  viewport: viewport,
+                };
+                var renderTask = page.render(renderContext);
+                renderTask.promise.then(function () {
+                  console.log("Page rendered");
+                    if(curPage < pdf.numPages) {
+                        curPage++;
+                        renderPage();
+                    }else if(curPage === pdf.numPages) {
+                        const span = document.createElement("span");
+                        span.id = "endIdentifier";
+                        document.body.appendChild(span);
+                    }
+                });
+              },
+              function (reason) {
+                // PDF loading error
+                console.error(reason);
+              }
+            );
+          }
+
+          renderPage();
+        },
+        function (reason) {
+          // PDF loading error
+          console.error(reason);
+        }
+      );
     </script>
-</body>
+  </body>
 </html>
-
