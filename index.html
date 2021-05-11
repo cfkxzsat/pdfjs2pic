@@ -20,7 +20,6 @@
       // header on that server.
       const sp = new URL(document.location).searchParams;
       const pdfEndpoint = sp.get("pdfEndpoint");
-      const page = Number(sp.get("page"));
       const scale = Number(sp.get("scale"));
       // console.log(pdfEndpoint, page, scale)
       // Loaded via <script> tag, create shortcut to access PDF.js exports.
@@ -33,7 +32,12 @@
         function (pdf) {
           console.log("PDF loaded");
 
-          let curPage = 1;
+          const pageNo = sp.get("pageNo");
+          const pageNoArr = pageNo === 'undefined' ? [...Array.from({length: pdf.numPages}).keys()].map(key => key + 1) : pageNo.split(',').map(str =>  Number(str));
+          // console.log('pageNoArr', pageNoArr);
+
+          let curPageIndex = 0;
+          let curPage = pageNoArr?.[curPageIndex] ?? 1;
 
           function renderPage() {
             pdf.getPage(curPage).then(
@@ -44,6 +48,7 @@
 
                 // Prepare canvas using PDF page dimensions
                 const realCanvas = document.createElement("canvas");
+                realCanvas.setAttribute('pageno', curPage);
                 realCanvas.height = viewport.height;
                 realCanvas.width = viewport.width;
 
@@ -67,8 +72,9 @@
                 renderTask.promise.then(function () {
                   realContext.drawImage(cacheCanvas,0,0); // 双缓冲技术，在cacheCanvas中绘制，但此时什么都看不到，由于cacheCanvas没有添加到页面上，在缓冲区完成绘制以后，将缓冲区的内容一次性绘制到页面上
                   console.log(`Page${curPage} rendered`);
-                    if(curPage < pdf.numPages) {
-                        curPage++;
+                    curPageIndex++;
+                    if(curPageIndex < pageNoArr.length) {
+                        curPage = pageNoArr[curPageIndex];
                         renderPage();
                     } else {
                         const span = document.createElement("span");
