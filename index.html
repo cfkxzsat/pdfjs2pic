@@ -23,13 +23,12 @@
       const page = Number(sp.get("page"));
       const scale = Number(sp.get("scale"));
       // console.log(pdfEndpoint, page, scale)
-      var url = `http://127.0.0.1:8080/${pdfEndpoint}`;
       // Loaded via <script> tag, create shortcut to access PDF.js exports.
 
       const canvasWrapper = document.getElementById('canvas-wrapper');
 
       // Asynchronous download of PDF
-      var loadingTask = pdfjsLib.getDocument(url);
+      var loadingTask = pdfjsLib.getDocument(pdfEndpoint);
       loadingTask.promise.then(
         function (pdf) {
           console.log("PDF loaded");
@@ -39,30 +38,39 @@
           function renderPage() {
             pdf.getPage(curPage).then(
               function (page) {
-                console.log("Page loaded");
+                console.log(`Page${curPage} loaded`);
 
                 var viewport = page.getViewport({ scale: scale });
 
                 // Prepare canvas using PDF page dimensions
-                const canvas = document.createElement("canvas");
+                const realCanvas = document.createElement("canvas");
+                realCanvas.height = viewport.height;
+                realCanvas.width = viewport.width;
 
-                var context = canvas.getContext("2d");
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
+                canvasWrapper.appendChild(realCanvas);
 
-                canvasWrapper.appendChild(canvas);
+
+                const cacheCanvas=document.createElement("canvas");
+                //设置cacheCanvas的width/height属性，和realCanvas的彻底相同
+                cacheCanvas.width=viewport.width;
+                cacheCanvas.height=viewport.height;
+                //开始绘制，获取真实节点和虚拟节点的上下文context
+                const realContext=realCanvas.getContext("2d");
+                const cacheContext=cacheCanvas.getContext("2d");
+
                 // Render PDF page into canvas context
                 var renderContext = {
-                  canvasContext: context,
+                  canvasContext: cacheContext,
                   viewport: viewport,
                 };
                 var renderTask = page.render(renderContext);
                 renderTask.promise.then(function () {
-                  console.log("Page rendered");
+                  realContext.drawImage(cacheCanvas,0,0); // 双缓冲技术，在cacheCanvas中绘制，但此时什么都看不到，由于cacheCanvas没有添加到页面上，在缓冲区完成绘制以后，将缓冲区的内容一次性绘制到页面上
+                  console.log(`Page${curPage} rendered`);
                     if(curPage < pdf.numPages) {
                         curPage++;
                         renderPage();
-                    }else if(curPage === pdf.numPages) {
+                    } else {
                         const span = document.createElement("span");
                         span.id = "endIdentifier";
                         document.body.appendChild(span);
