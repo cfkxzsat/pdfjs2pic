@@ -13,6 +13,7 @@ class PDF2png {
     });
   }
   async run(pdfEndpoint, pngDirPath, pageNo) {
+    console.log(`[pdfjs2pic start]: ${pdfEndpoint} ${pageNo !== undefined ? `,pageNo: ${pageNo}`: '' }`)
     const newPage = await this.browser.newPage();
     await newPage.goto(`file:${path.join(__dirname, `index.html?pdfEndpoint=${pdfEndpoint}&pageNo=${pageNo}&scale=${this.scale}`)}`);
     await newPage.waitForSelector('#endIdentifier', {timeout: 0});// 默认30s超时
